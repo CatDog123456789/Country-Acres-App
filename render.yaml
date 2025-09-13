@@ -2,11 +2,13 @@ services:
   - type: web
     name: county-acres-pet-resort
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && node setup.js
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DEBUG
+        value: "true"
     disk:
       name: data
       mountPath: /opt/render/project/src/data

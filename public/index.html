@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>County Acres Pet Resort</title>
+<style>
+  :root{
+    --c-bg:#f4f6f8; --c-card:#fff; --c-text:#111; --c-muted:#6b7280; --c-line:#e6edf0; --c-brand:#2d9cdb;
+    --LPC:#e6f4ff; --Classic:#ecfdf5; --Royal:#fff7ed; --PatioNC:#fef9c3; --PatioOC:#fae8ff;
+    --VetRoom:#fde2e4; --CatRoom:#e9d5ff; --GroomRoom:#cffafe; --Office:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Arial,Helvetica,sans-serif;margin:12px;background:var(--c-bg);color:var(--c-text)}
+  h1{text-align:center;margin:8px 0 16px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:1200px){ .grid-2{grid-template-columns:1fr 1fr} }
+  .panel{background:var(--c-card);padding:12px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+  .panel h2{margin:4px 0 10px}
+  label{display:block;margin-top:8px;font-weight:600}
+  input,select,textarea,button{width:100%;padding:8px;margin-top:6px;border:1px solid #cfd8df;border-radius:8px}
+  textarea{min-height:64px;resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:220px}
+  .btn{cursor:pointer;background:var(--c-brand);color:#fff;border:none}
+  .btn.secondary{background:#6c757d;color:#fff}
+  .btn.warn{background:#ef4444;color:#fff}
+  .muted{color:var(--c-muted);font-size:13px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;background:#fff}
+  th,td{border:1px solid var(--c-line);padding:8px;text-align:left;vertical-align:top;font-size:13px}
+  th{background:var(--c-brand);color:#fff}
+  .pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;border:1px solid #0001}
+  .badge{display:inline-block;padding:2px 6px;border-radius:6px;font-size:12px;background:#0000000f}
+  .legend{display:flex;flex-wrap:wrap;gap:6px}
+  .legend .chip{padding:4px 8px;border-radius:999px;border:1px solid #0001;font-size:12px}
+  .LPC{background:var(--LPC)} .Classic{background:var(--Classic)} .Royal{background:var(--Royal)}
+  .PatioNC{background:var(--PatioNC)} .PatioOC{background:var(--PatioOC)}
+  .VetRoom{background:var(--VetRoom)} .CatRoom{background:var(--CatRoom)}
+  .GroomRoom{background:var(--GroomRoom)} .Office{background:var(--Office)}
+  .nowrap{white-space:nowrap}
+  .export-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .pet-card{border:1px dashed var(--c-line);border-radius:8px;padding:8px;margin-top:8px}
+  .pet-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .searchbar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .searchbar input{flex:1}
+  .list{max-height:200px;overflow:auto;border:1px solid var(--c-line);border-radius:8px}
+  .list-item{display:flex;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--c-line)}
+  .list-item:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<h1>County Acres Pet Resort</h1>
+
+<div class="panel" style="text-align:center">
+  <img src="/logo.png" alt="Country Acres Pet Resort" class="hero-logo" style="max-width:480px;width:100%;height:auto;border-radius:10px;display:inline-block" />
+</div>
+
+<div class="grid grid-2">
+  <div class="panel">
+    <h2>Clients — Search & Edit</h2>
+    <div class="searchbar">
+      <input id="clientSearch" placeholder="Search by owner name or phone…">
+      <button class="btn secondary" id="clearSearch" style="width:auto">Clear</button>
+    </div>
+    <div class="list" id="clientList"></div>
+
+    <h3 style="margin-top:12px">Client & Pets</h3>
+    <div class="row">
+      <div><label>Owner Name</label><input id="ownerName"></div>
+      <div><label>Owner Phone</label><input id="ownerPhone"></div>
+    </div>
+    <div class="row">
+      <div><label>Address</label><input id="ownerAddress"></div>
+      <div><label>Emergency Contact</label><input id="ownerEmergency"></div>
+    </div>
+
+    <div id="petsContainer"></div>
+    <div class="pet-actions">
+      <button class="btn secondary" id="addPetRow" style="width:auto">+ Add Another Pet</button>
+      <button class="btn" id="saveClient" style="width:auto">Save / Update Client & Pets</button>
+      <button class="btn warn" id="deleteClient" style="width:auto">Delete Client</button>
+    </div>
+    <p class="muted">You can add or edit multiple pets at once. Photos are profile-only (local base64).</p>
+  </div>
+
+  <div class="panel">
+    <h2>New Booking / Reservation</h2>
+    <div class="row">
+      <div>
+        <label>Type</label>
+        <select id="bookType">
+          <option value="Daycare">Daycare</option>
+          <option value="Grooming">Grooming</option>
+          <option value="Boarding">Boarding</option>
+        </select>
+      </div>
+      <div>
+        <label>Client</label>
+        <select id="clientSelect"><option value="">— select client —</option></select>
+      </div>
+      <div>
+        <label>Pet(s)</label>
+        <select id="petSelect" multiple size="4"><option value="">— select pet(s) —</option></select>
+        <small class="muted">Tip: select multiple pets (same client) to book them together.</small>
+      </div>
+    </div>
+
+    <div class="row">
+      <div><label>Check-in Date</label><input type="date" id="bookStart"></div>
+      <div><label>Check-out Date (Boarding)</label><input type="date" id="bookEnd"></div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Run (optional for Daycare/Grooming)</label>
+        <select id="runSection">
+          <option value="">— Select section —</option>
+        </select>
+        <select id="runNumber" style="margin-top:6px">
+          <option value="">— Select run —</option>
+        </select>
+        <label style="margin-top:6px">Yard</label>
+        <select id="yardSelect">
+          <option value="">— Select yard —</option>
+          <option value="Yard 1">Yard 1</option>
+          <option value="Yard 2">Yard 2</option>
+          <option value="Yard 3">Yard 3</option>
+          <option value="Yard 4">Yard 4</option>
+          <option value="Yard 5">Yard 5</option>
+          <option value="Yard 6">Yard 6</option>
+          <option value="Yard 7">Yard 7</option>
+          <option value="T-Field">T-Field</option>
+          <option value="LPC">LPC</option>
+        </select>
+        <div class="row" style="margin-top:6px;align-items:center">
+          <div>
+            <label style="display:flex;gap:8px;align-items:center">
+              <input type="checkbox" id="shareRun" checked />
+              Allow selected pets (same client) to share this run
+            </label>
+          </div>
+        </div>
+        <p class="muted">Booked runs are disabled for overlapping dates (except shares by the same client).</p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn" id="reserveBtn">Reserve / Book</button>
+      <button class="btn secondary" id="reserveWithoutRun">Reserve Without Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="panel">
+    <h2>Pending Boarding (sorted by start)</h2>
+    <table id="pendingTable">
+      <thead><tr>
+        <th>Start</th><th>Pet</th><th>Owner</th><th>Section</th><th>Run</th><th>End</th><th class="nowrap">Actions</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Active Boarding</h2>
+    <table id="activeTable">
+      <thead><tr>
+        <th>Pet</th><th>Owner</th><th>Section</th><th>Run</th><th>In</th><th>Out</th><th>Notes</th><th class="nowrap">Actions</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Daycare & Grooming</h2>
+  <table id="daycareTable">
+    <thead><tr>
+      <th>Pet</th><th>Owner</th><th>Type</th><th>In</th><th>Yard</th><th>Notes</th><th class="nowrap">Actions</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Export & Print</h2>
+  <div class="export-row">
+    <div style="flex:1;min-width:220px">
+      <label>Export Data (CSV)</label>
+      <select id="exportSelect">
+        <option value="clients">Clients (alphabetical)</option>
+        <option value="pending">Pending Boarding</option>
+        <option value="active">Active Boarding</option>
+        <option value="daycare">Daycare & Grooming</option>
+        <option value="all">All Bookings</option>
+      </select>
+    </div>
+    <button class="btn" id="exportBtn" style="width:auto">Export CSV</button>
+    <button class="btn secondary" id="printSheets" style="width:auto">Print Boarding Sheets (Today + Future)</button>
+  </div>
+</div>
+
+<template id="sheetTpl">
+  <html><head><meta charset="utf-8">
+  <title>Boarding Sheet - County Acres Pet Resort</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;color:#111}
+    h2{margin:0 0 12px}
+    .card{border:1px solid #ddd;border-radius:10px;padding:12px;margin:10px 0}
+    .row{display:flex;gap:14px;flex-wrap:wrap}
+    .row>div{flex:1;min-width:260px}
+    .hdr{display:flex;justify-content:space-between;align-items:baseline}
+    .chip{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid #0002;background:#00000008;font-size:12px}
+    .LPC{background:#e6f4ff}.Classic{background:#ecfdf5}.Royal{background:#fff7ed}.PatioNC{background:#fef9c3}.PatioOC{background:#fae8ff}
+    .VetRoom{background:#fde2e4}.CatRoom{background:#e9d5ff}.GroomRoom{background:#cffafe}.Office{background:#f1f5f9}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border:1px solid #e5e7eb;padding:6px;text-align:left;font-size:13px;vertical-align:top}
+    th{background:#f8fafc}
+    .muted{color:#555}
+    @media print {.noprint{display:none}}
+  </style>
+  </head><body>
+    <div class="hdr">
+      <h2>Boarding Sheets — County Acres Pet Resort</h2>
+      <div class="muted">Printed: <span id="printedAt"></span></div>
+    </div>
+    <div id="sheets"></div>
+    <script>
+      document.getElementById('printedAt').textContent = new Date().toLocaleString();
+    </script>
+  </body></html>
+</template>
+
+<script>
+/* ===========================
+   DATA & CONSTANTS (API-backed, no Firebase)
+=========================== */
+const SECTION_RANGES = {
+  'LPC':[1,53],
+  'Classic':[1,23],
+  'Royal':[24,39],
+  'Patio NC':[1,31],
+  'Patio OC':[1,31],
+  'Vet Room':[1,5],
+  'Cat Room':[1,16],
+  'Groom Room':[1,13],
+  'Office':[1,5],
+};
+const SECTION_CLASS = {
+  'LPC':'LPC','Classic':'Classic','Royal':'Royal','Patio NC':'PatioNC','Patio OC':'PatioOC',
+  'Vet Room':'VetRoom','Cat Room':'CatRoom','Groom Room':'GroomRoom','Office':'Office'
+};
+
+// API state + local cache fallback
+let clients = [];
+let bookings = [];
+const API_BASE = ''; // same origin
+let lastServerSig = ''; // signature of last server state for live sync
+
+async function loadState() {
+  try {
+    const r = await fetch(`${API_BASE}/api/state`);
+    if (!r.ok) throw new Error('Bad response');
+    const data = await r.json();
+    clients = Array.isArray(data.clients) ? data.clients : [];
+    bookings = Array.isArray(data.bookings) ? data.bookings : [];
+    lastServerSig = data.sig || '';
+    localStorage.setItem('capr_clients', JSON.stringify(clients));
+    localStorage.setItem('capr_bookings', JSON.stringify(bookings));
+  } catch (e) {
+    console.warn("API unavailable, using localStorage.", e);
+    clients = JSON.parse(localStorage.getItem('capr_clients')||'[]');
+    bookings = JSON.parse(localStorage.getItem('capr_bookings')||'[]');
+  }
+}
+
+async function persist() {
+  localStorage.setItem('capr_clients', JSON.stringify(clients));
+  localStorage.setItem('capr_bookings', JSON.stringify(bookings));
+  try {
+    const r = await fetch(`${API_BASE}/api/state`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ clients, bookings, prevSig: lastServerSig })
+    });
+    if (r.ok) {
+      const data = await r.json().catch(()=>({}));
+      if (data && data.sig) lastServerSig = data.sig;
+    }
+  } catch (e) {
+    console.warn("Failed to sync to API, kept in localStorage.", e);
+  }
+}
+
+/* ===========================
+   UTILS
+=========================== */
+const $ = sel => document.querySelector(sel);
+function byOwner(a,b){ return (a.owner||'').toLowerCase().localeCompare((b.owner||'').toLowerCase()); }
+function fmtDate(s){ return s||''; }
+function overlaps(aStart,aEnd,bStart,bEnd){
+  if(!aStart||!bStart) return false;
+  const A=new Date(aStart), B=new Date(aEnd||aStart), C=new Date(bStart), D=new Date(bEnd||bStart);
+  return (A<=D)&&(C<=B);
+}
+function makeId(){ return 'b_'+Date.now()+'_'+Math.floor(Math.random()*10000); }
+
+/* ===========================
+   CLIENT SEARCH LIST
+=========================== */
+const clientSearch = document.getElementById('clientSearch');
+const clientList   = document.getElementById('clientList');
+document.getElementById('clearSearch').addEventListener('click', ()=>{ clientSearch.value=''; renderClientList(); });
+
+function renderClientList(){
+  const q = clientSearch.value.trim().toLowerCase();
+  const list = clients.slice().sort(byOwner).filter(c=>{
+    if(!q) return true;
+    return (c.owner||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q);
+  });
+  clientList.innerHTML = list.map((c)=>`
+    <div class="list-item">
+      <div>
+        <div><strong>${c.owner||''}</strong></div>
+        <div class="muted">${c.phone||''} • ${c.address||''}</div>
+        <div class="muted">Pets: ${(c.pets||[]).map(p=>p.name).join(', ')||'—'}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn secondary" style="width:auto" onclick="loadClientByName('${(c.owner||'').replaceAll('"','&quot;')}')">Edit</button>
+        <button class="btn" style="width:auto" onclick="quickSelectClient(${clients.indexOf(c)})">Use</button>
+      </div>
+    </div>
+  `).join('') || '<div class="list-item"><div class="muted">No clients found.</div></div>';
+}
+clientSearch.addEventListener('input', renderClientList);
+
+/* ===========================
+   CLIENT EDITOR (multiple pets)
+=========================== */
+const ownerName=$('#ownerName'), ownerPhone=$('#ownerPhone'), ownerAddress=$('#ownerAddress'), ownerEmergency=$('#ownerEmergency');
+const petsContainer=$('#petsContainer');
+function newPetRow(data={}){
+  const id = 'p_'+Math.random().toString(36).slice(2,8);
+  const el = document.createElement('div');
+  el.className = 'pet-card';
+  el.dataset.rowid = id;
+  el.innerHTML = `
+    <div class="row">
+      <div><label>Pet Name</label><input class="pet-name" value="${data.name||''}"></div>
+      <div><label>Breed</label><input class="pet-breed" value="${data.breed||''}"></div>
+      <div><label>Date of Birth</label><input type="date" class="pet-dob" value="${data.dob||''}"></div>
+      <div><label>Weight (lb)</label><input type="number" step="0.1" min="0" class="pet-weight" value="${data.weight||''}" placeholder="e.g., 23.5"></div>
+      <div><label>Sex</label>
+        <select class="pet-sex">
+          <option value="">Select</option>
+          <option ${data.sex==='Male'?'selected':''}>Male</option>
+          <option ${data.sex==='Female'?'selected':''}>Female</option>
+        </select>
+      </div>
+      <div><label>Spayed / Neutered</label>
+        <select class="pet-fixed">
+          <option ${data.spayed!=='Yes'?'selected':''} value="No">No</option>
+          <option ${data.spayed==='Yes'?'selected':''} value="Yes">Yes</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Rabies</label><input type="date" class="v-rabies" value="${data?.vaccs?.rabies||''}"></div>
+      <div><label>Bordetella</label><input type="date" class="v-bord" value="${data?.vaccs?.bordetella||''}"></div>
+      <div><label>DHLPP</label><input type="date" class="v-dhlpp" value="${data?.vaccs?.dhlpp||''}"></div>
+      <div><label>CIV</label><input type="date" class="v-civ" value="${data?.vaccs?.civ||''}"></div>
+    </div>
+    <div class="row">
+      <div><label>Feeding</label><textarea class="pet-feeding">${data.feeding||''}</textarea></div>
+      <div><label>Medication</label><textarea class="pet-meds">${data.meds||''}</textarea></div>
+    </div>
+    <label>Notes</label><textarea class="pet-notes">${data.notes||''}</textarea>
+    <div class="row" style="border:1px dashed #e6edf0;border-radius:8px;padding:8px;margin-top:6px">
+      <div>
+        <label>Photo (profile only)</label>
+        <input type="file" class="pet-photo" accept="image/*">
+      </div>
+      <div>
+        <label class="muted">Preview</label>
+        <img class="pet-preview" style="max-width:160px;max-height:160px;border-radius:10px;border:1px solid #0002;display:block" alt="No photo" src="${data.photoBase64||''}">
+      </div>
+    </div>
+    <div class="pet-actions">
+      <button class="btn warn" style="width:auto" onclick="this.closest('.pet-card').remove()">Remove Pet</button>
+    </div>
+  `;
+  el.querySelector('.pet-photo').addEventListener('change', e=>{
+    const f = e.target.files?.[0]; if(!f) return;
+    const r = new FileReader(); r.onload = ev => { el.querySelector('.pet-preview').src = ev.target.result; }; r.readAsDataURL(f);
+  });
+  petsContainer.appendChild(el);
+}
+function collectPetRows(){
+  const rows = Array.from(petsContainer.querySelectorAll('.pet-card'));
+  return rows.map(r=>({
+    name: r.querySelector('.pet-name').value.trim(),
+    breed: r.querySelector('.pet-breed').value.trim(),
+    dob: r.querySelector('.pet-dob')?.value || '',
+    weight: r.querySelector('.pet-weight')?.value || '',
+    sex: r.querySelector('.pet-sex').value,
+    spayed: r.querySelector('.pet-fixed').value||'No',
+    vaccs: {
+      rabies: r.querySelector('.v-rabies').value,
+      bordetella: r.querySelector('.v-bord').value,
+      dhlpp: r.querySelector('.v-dhlpp').value,
+      civ: r.querySelector('.v-civ').value,
+    },
+    feeding: r.querySelector('.pet-feeding').value.trim(),
+    meds: r.querySelector('.pet-meds').value.trim(),
+    notes: r.querySelector('.pet-notes').value.trim(),
+    photoBase64: r.querySelector('.pet-preview').src && r.querySelector('.pet-preview').src.startsWith('data:') ? r.querySelector('.pet-preview').src : (r.querySelector('.pet-preview').src||'')
+  })).filter(p=>p.name);
+}
+document.getElementById('addPetRow').addEventListener('click', ()=> newPetRow());
+
+window.loadClientByName = function(name){
+  const idx = clients.findIndex(c=> (c.owner||'').toLowerCase() === name.toLowerCase());
+  if(idx===-1) return alert('Client not found.');
+  loadClientByIndex(idx);
+};
+window.quickSelectClient = function(idx){
+  clientSelect.value = idx;
+  clientSelect.dispatchEvent(new Event('change'));
+  alert('Client selected for booking.');
+};
+function loadClientByIndex(idx){
+  const c = clients[idx]; if(!c) return;
+  ownerName.value = c.owner||''; ownerPhone.value=c.phone||''; ownerAddress.value=c.address||''; ownerEmergency.value=c.emergency||'';
+  petsContainer.innerHTML = '';
+  (c.pets||[]).forEach(p=> newPetRow(p));
+  if(!(c.pets||[]).length) newPetRow();
+  clientSelect.value = idx; clientSelect.dispatchEvent(new Event('change'));
+}
+
+document.getElementById('saveClient').addEventListener('click', async ()=>{
+  const owner = ownerName.value.trim();
+  if(!owner) return alert('Owner name is required.');
+  let idx = clients.findIndex(c=> (c.owner||'').toLowerCase()===owner.toLowerCase());
+  const base = { owner, phone:ownerPhone.value.trim(), address:ownerAddress.value.trim(), emergency:ownerEmergency.value.trim(), pets:[] };
+  if(idx===-1){ clients.push(base); idx = clients.length-1; } else { clients[idx] = {...clients[idx], ...base}; }
+  const newPets = collectPetRows();
+  const map = new Map((clients[idx].pets||[]).map(p=>[p.name.toLowerCase(), p]));
+  newPets.forEach(p=> map.set(p.name.toLowerCase(), p));
+  clients[idx].pets = Array.from(map.values());
+  await persist(); populateClientSelect(); renderClientList();
+  alert('Client & pets saved.');
+});
+
+document.getElementById('deleteClient').addEventListener('click', async ()=>{
+  const owner = ownerName.value.trim(); if(!owner) return alert('Enter/select a client first.');
+  const idx = clients.findIndex(c=> (c.owner||'').toLowerCase()===owner.toLowerCase());
+  if(idx===-1) return alert('Client not found.');
+  if(!confirm('Delete this client and all their pets?')) return;
+  clients.splice(idx,1);
+  bookings = bookings.filter(b=> b.clientIdx!==idx);
+  bookings.forEach(b=>{ if(b.clientIdx>idx) b.clientIdx-=1; });
+  ownerName.value = ownerPhone.value = ownerAddress.value = ownerEmergency.value = '';
+  petsContainer.innerHTML = '';
+  newPetRow();
+  await persist(); populateClientSelect(); renderClientList(); renderAll();
+  alert('Client deleted.');
+});
+
+/* ===========================
+   BOOKING FORM
+=========================== */
+const bookType=document.getElementById('bookType');
+const clientSelect=document.getElementById('clientSelect');
+const petSelect=document.getElementById('petSelect');
+const bookStart=document.getElementById('bookStart');
+const bookEnd=document.getElementById('bookEnd');
+const runSection=document.getElementById('runSection');
+const runNumber =document.getElementById('runNumber');
+const yardSelect=document.getElementById('yardSelect');
+const shareRun  =document.getElementById('shareRun');
+
+function populateClientSelect(){
+  clients.sort(byOwner);
+  clientSelect.innerHTML = '<option value="">— select client —</option>';
+  clients.forEach((c,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent = `${c.owner}${c.pets?.length?` (${c.pets.length})`:''}`;
+    clientSelect.appendChild(o);
+  });
+}
+function populatePetSelect(){
+  petSelect.innerHTML = '';
+  const idx = clientSelect.value;
+  if(idx===''){ petSelect.innerHTML = '<option value="">— select pet(s) —</option>'; return; }
+  (clients[idx].pets||[]).forEach((p,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent = p.name; petSelect.appendChild(o);
+  });
+}
+clientSelect.addEventListener('change', populatePetSelect);
+
+function populateRunSectionSelect(){
+  runSection.innerHTML = '<option value="">— Select section —</option>';
+  Object.keys(SECTION_RANGES).forEach(section=>{
+    const opt = document.createElement('option');
+    opt.value = section; opt.textContent = section;
+    runSection.appendChild(opt);
+  });
+}
+populateRunSectionSelect();
+
+function populateRunNumberSelect(){
+  runNumber.innerHTML = '<option value="">— Select run —</option>';
+  const section = runSection.value;
+  if(!section) return;
+  const [start,end] = SECTION_RANGES[section];
+  for(let i=start;i<=end;i++){
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    runNumber.appendChild(opt);
+  }
+  updateRunNumberAvailability();
+}
+
+function updateRunNumberAvailability(){
+  const section = runSection.value;
+  if(!section) return;
+  const start = bookStart.value;
+  const end   = (bookEnd.value || start);
+  const cIdx = clientSelect.value==='' ? null : Number(clientSelect.value);
+  const blocked = bookings
+    .filter(b => b.type === 'Boarding' && b.section === section && overlaps(start, end, b.checkIn, b.checkOut) && (cIdx===null || b.clientIdx !== cIdx))
+    .map(b => String(b.number));
+  Array.from(runNumber.options).forEach(opt=>{
+    if(!opt.value) return;
+    const isBlocked = blocked.includes(opt.value);
+    opt.disabled = isBlocked;
+    opt.textContent = isBlocked ? `${opt.value} (Booked)` : opt.value;
+  });
+}
+
+runSection.addEventListener('change', populateRunNumberSelect);
+bookStart.addEventListener('change', updateRunNumberAvailability);
+bookEnd.addEventListener('change', updateRunNumberAvailability);
+
+// Show Yard only for Daycare
+function updateYardVisibility(){
+  const isDaycare = bookType.value === 'Daycare';
+  // hide/show the select and its label (previous sibling)
+  const yardLabel = yardSelect && yardSelect.previousElementSibling;
+  if(yardSelect){ yardSelect.style.display = isDaycare ? '' : 'none'; }
+  if(yardLabel && yardLabel.tagName==='LABEL'){ yardLabel.style.display = isDaycare ? '' : 'none'; }
+}
+bookType.addEventListener('change', updateYardVisibility);
+updateYardVisibility();
+
+document.getElementById('reserveBtn').addEventListener('click', async ()=>{
+  const cIdx = clientSelect.value;
+  const selectedPets = Array.from(petSelect.selectedOptions).map(o=>Number(o.value));
+  const type = bookType.value;
+  if(cIdx==='') return alert('Select a client');
+  if(!selectedPets.length) return alert('Select one or more pets');
+  const start = bookStart.value; if(!start) return alert('Select check-in date');
+  const end = type==='Boarding' ? (bookEnd.value || '') : (bookEnd.value || start);
+  if(type==='Boarding' && !end) return alert('Select check-out date for boarding');
+
+  const sec = runSection.value || '';
+  const num = runNumber.value || '';
+  if(type==='Boarding' && sec && num){
+    const conflict = bookings.some(b=>
+      b.type==='Boarding' && b.section===sec && String(b.number)===String(num) &&
+      overlaps(start,end,b.checkIn,b.checkOut) && b.clientIdx !== Number(cIdx)
+    );
+    if(conflict) return alert('Selected run is booked by another client for these dates.');
+  }
+
+  selectedPets.forEach(pIdx=>{
+    bookings.push({
+      id:makeId(), type, clientIdx:Number(cIdx), petIdx:Number(pIdx),
+      section:sec, number:sec?String(num):'',
+      checkIn:start, checkOut:end, status:(type==='Boarding'?'pending':'active'),
+      yard: (type==='Daycare' ? (yardSelect.value || '') : ''),
+      sharedRun: !!shareRun.checked, createdAt: new Date().toISOString()
+    });
+  });
+
+  await persist(); renderAll(); alert('Saved.');
+});
+
+document.getElementById('reserveWithoutRun').addEventListener('click', async ()=>{
+  const cIdx = clientSelect.value;
+  const selectedPets = Array.from(petSelect.selectedOptions).map(o=>Number(o.value));
+  const type = bookType.value;
+  if(cIdx==='') return alert('Select a client'); 
+  if(!selectedPets.length) return alert('Select one or more pets');
+  const start = bookStart.value; if(!start) return alert('Select check-in date');
+  const end = type==='Boarding' ? (bookEnd.value||'') : (bookEnd.value||start);
+  if(type==='Boarding' && !end) return alert('Select check-out date');
+
+  selectedPets.forEach(pIdx=>{
+    bookings.push({
+      id:makeId(), type, clientIdx:Number(cIdx), petIdx:Number(pIdx),
+      section:'', number:'', checkIn:start, checkOut:end, status:(type==='Boarding'?'pending':'active'),
+      yard: (type==='Daycare' ? (yardSelect.value || '') : ''),
+      sharedRun:false, createdAt:new Date().toISOString()
+    });
+  });
+
+  await persist(); renderAll(); alert('Saved without run.');
+});
+
+/* ===========================
+   RENDER TABLES
+=========================== */
+const pendingBody = document.querySelector('#pendingTable tbody');
+const activeBody  = document.querySelector('#activeTable tbody');
+const daycareBody = document.querySelector('#daycareTable tbody');
+
+function renderAll(){
+  renderPending();
+  renderActive();
+  renderDaycare();
+  renderClientList();
+  populateRunNumberSelect();
+}
+
+function renderPending(){
+  const rows = bookings.filter(b=> b.type==='Boarding' && b.status==='pending').sort((a,b)=> new Date(a.checkIn)-new Date(b.checkIn));
+  pendingBody.innerHTML = '';
+  rows.forEach(b=>{
+    const c = clients[b.clientIdx], p=(c?.pets||[])[b.petIdx];
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fmtDate(b.checkIn)}</td>
+      <td>${p?.name||''} <span class="badge">${p?.breed||''}</span> <span class="badge">Spayed: ${p?.spayed||'No'}</span></td>
+      <td>${c?.owner||''} <div class="muted">${c?.phone||''}</div></td>
+      <td class="${SECTION_CLASS[b.section]||''}">${b.section||''}</td>
+      <td>${b.number||''}${b.sharedRun?' <span class="badge">Shared</span>':''}</td>
+      <td>${fmtDate(b.checkOut)}</td>
+      <td class="nowrap">
+        <button class="btn secondary" onclick="editBooking('${b.id}')">Edit</button>
+        <button class="btn secondary" onclick="printSingle('${b.id}')">Print</button>
+        <button class="btn" onclick="checkInBooking('${b.id}')">Check In</button>
+        <button class="btn warn" onclick="cancelBooking('${b.id}')">Cancel</button>
+      </td>
+    `;
+    pendingBody.appendChild(tr);
+  });
+}
+
+function renderActive(){
+  const rows = bookings.filter(b=> b.type==='Boarding' && b.status==='active').sort((a,b)=> new Date(a.checkIn)-new Date(b.checkIn));
+  activeBody.innerHTML = '';
+  rows.forEach(b=>{
+    const c=clients[b.clientIdx], p=(c?.pets||[])[b.petIdx];
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p?.name||''} <div class="muted">${p?.breed||''}</div></td>
+      <td>${c?.owner||''}<div class="muted">${c?.phone||''}</div></td>
+      <td class="${SECTION_CLASS[b.section]||''}">${b.section||''}</td>
+      <td>${b.number||''}${b.sharedRun?' <span class="badge">Shared</span>':''}</td>
+      <td>${fmtDate(b.checkIn)}</td>
+      <td>${fmtDate(b.checkOut)}</td>
+      <td>${(p?.notes||'')}</td>
+      <td class="nowrap">
+        <button class="btn secondary" onclick="printSingle('${b.id}')">Print</button>
+        <button class="btn warn" onclick="completeBooking('${b.id}')">Check Out</button>
+      </td>`;
+    activeBody.appendChild(tr);
+  });
+}
+
+function renderDaycare(){
+  const rows = bookings.filter(b=> (b.type==='Daycare'||b.type==='Grooming') && b.status==='active').sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+  daycareBody.innerHTML = '';
+  rows.forEach(b=>{
+    const c=clients[b.clientIdx], p=(c?.pets||[])[b.petIdx];
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p?.name||''} <div class="muted">${p?.breed||''}</div></td>
+      <td>${c?.owner||''}<div class="muted">${c?.phone||''}</div></td>
+      <td><span class="pill">${b.type}</span></td>
+      <td>${fmtDate(b.checkIn)}</td>
+      <td>${b.type==='Daycare' ? (b.yard||'') : ''}</td>
+      <td>${p?.notes||''}</td>
+      <td class="nowrap">
+        <button class="btn warn" onclick="completeBooking('${b.id}')">Check Out</button>
+      </td>`;
+    daycareBody.appendChild(tr);
+  });
+}
+
+/* ===========================
+   BOOKING OPS
+=========================== */
+window.cancelBooking = async function(id){
+  if(!confirm('Cancel this booking?')) return;
+  const i = bookings.findIndex(x=>x.id===id); if(i===-1) return;
+  bookings.splice(i,1); await persist(); renderAll();
+};
+window.completeBooking = async function(id){
+  if(!confirm('Check out this booking?')) return;
+  const i = bookings.findIndex(x=>x.id===id); if(i===-1) return;
+  bookings.splice(i,1); await persist(); renderAll();
+};
+window.editBooking = async function(id){
+  const b = bookings.find(x=>x.id===id); if(!b) return alert('Not found');
+  clientSelect.value = b.clientIdx;
+  clientSelect.dispatchEvent(new Event('change'));
+  setTimeout(()=>{ 
+    Array.from(petSelect.options).forEach(o=> o.selected = (Number(o.value)===b.petIdx));
+  },0);
+  bookType.value=b.type;
+  bookStart.value=b.checkIn; bookEnd.value=b.checkOut||'';
+  runSection.value = b.section || '';
+  populateRunNumberSelect();
+  runNumber.value = b.number || '';
+  updateRunNumberAvailability();
+  shareRun.checked = !!b.sharedRun;
+  if(confirm('Editing will remove the original; you can re-save once updated. Continue?')){
+    bookings = bookings.filter(x=>x.id!==id); await persist(); renderAll();
+  }
+};
+window.checkInBooking = async function(id){
+  const b = bookings.find(x=>x.id===id); if(!b) return;
+  if(!b.section || !b.number){
+    alert('Assign a run using the Section/Run dropdowns in the New Booking form, then click "Reserve / Book" to save an updated entry or Edit the reservation.');
+    return;
+  }
+  b.status = 'active'; await persist(); renderAll();
+};
+
+/* ===========================
+   PRINT SHEETS
+=========================== */
+function buildBoardingSheetNodes(doc, list){
+  const sheets = doc.getElementById('sheets');
+  const sorted = list.slice().sort((a,b)=>{
+    const d = new Date(a.checkIn)-new Date(b.checkIn);
+    if(d!==0) return d;
+    if(a.section!==b.section) return (a.section||'').localeCompare(b.section||'');
+    return (Number(a.number||0)-Number(b.number||0));
+  });
+  sorted.forEach(b=>{
+    const c=clients[b.clientIdx], p=(c?.pets||[])[b.petIdx];
+    const card = doc.createElement('div'); card.className='card';
+    card.innerHTML = `
+      <div class="hdr">
+        <div><strong>${p?.name||''}</strong> <span class="chip ${SECTION_CLASS[b.section]||''}">${b.section||'No Run'} ${b.number?('#'+b.number):''}</span></div>
+        <div class="muted">${b.status==='pending'?'Not Checked In Yet':'Active'} ${b.sharedRun?'• Shared':''}</div>
+      </div>
+      <div class="row">
+        <div>
+          <table>
+            <tr><th>Owner</th><td>${c?.owner||''}</td></tr>
+            <tr><th>Phone</th><td>${c?.phone||''}</td></tr>
+            <tr><th>Address</th><td>${c?.address||''}</td></tr>
+            <tr><th>Emergency</th><td>${c?.emergency||''}</td></tr>
+          </table>
+        </div>
+        <div>
+          <table>
+            <tr><th>Breed</th><td>${p?.breed||''}</td></tr>
+            <tr><th>DOB</th><td>${p?.dob||''}</td></tr>
+            <tr><th>Weight (lb)</th><td>${p?.weight||''}</td></tr>
+            <tr><th>Sex</th><td>${p?.sex||''}</td></tr>
+            <tr><th>Spayed/Neutered</th><td>${p?.spayed||'No'}</td></tr>
+            <tr><th>Vaccines</th><td>
+              Rabies: ${p?.vaccs?.rabies||''}<br>
+              Bordetella: ${p?.vaccs?.bordetella||''}<br>
+              DHLPP: ${p?.vaccs?.dhlpp||''}<br>
+              CIV: ${p?.vaccs?.civ||''}
+            </td></tr>
+          </table>
+        </div>
+      </div>
+      <table>
+        <tr><th>Feeding</th><td>${p?.feeding||''}</td></tr>
+        <tr><th>Medication</th><td>${p?.meds||''}</td></tr>
+        <tr><th>Notes</th><td>${p?.notes||''}</td></tr>
+        <tr><th>Check-in</th><td>${b.checkIn||''}</td></tr>
+        <tr><th>Check-out</th><td>${b.checkOut||''}</td></tr>
+      </table>
+    `;
+    sheets.appendChild(card);
+  });
+}
+document.getElementById('printSheets').addEventListener('click', ()=>{
+  const tpl = document.getElementById('sheetTpl').content.cloneNode(true);
+  const html = document.createElement('html');
+  html.innerHTML = tpl.firstChild.outerHTML;
+  const w = window.open('', '_blank');
+  w.document.open(); w.document.write(html.outerHTML); w.document.close();
+  const allBoarding = bookings.filter(b=> b.type==='Boarding' && (b.status==='active' || b.status==='pending'));
+  buildBoardingSheetNodes(w.document, allBoarding);
+  setTimeout(()=> w.print(), 300);
+});
+window.printSingle = function(id){
+  const b = bookings.find(x=>x.id===id); if(!b) return;
+  const tpl = document.getElementById('sheetTpl').content.cloneNode(true);
+  const w = window.open('', '_blank');
+  w.document.open(); w.document.write(tpl.firstChild.outerHTML); w.document.close();
+  buildBoardingSheetNodes(w.document, [b]);
+  setTimeout(()=> w.print(), 300);
+};
+
+/* ===========================
+   EXPORT CSV
+=========================== */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const type = document.getElementById('exportSelect').value;
+  let rows=[], header=[];
+  if(type==='clients'){
+    const list = clients.slice().sort(byOwner);
+    header = ['Owner','Phone','Address','Emergency','#Pets','Pet Names','Pet DOBs'];
+    rows = list.map(c=>[
+      c.owner||'',
+      c.phone||'',
+      c.address||'',
+      c.emergency||'',
+      (c.pets||[]).length,
+      (c.pets||[]).map(p=>p.name).join('; '),
+      (c.pets||[]).map(p=>p.dob||'').join('; ')
+    ]);
+  }else if(type==='pending'){
+    header = ['Start','End','Owner','Pet','Pet DOB','Pet Weight (lb)','Section','Run','Status','Shared'];
+    rows = bookings.filter(b=>b.type==='Boarding' && b.status==='pending').sort((a,b)=> new Date(a.checkIn)-new Date(b.checkIn))
+           .map(b=>[b.checkIn,b.checkOut,(clients[b.clientIdx]?.owner)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.name)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.dob)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.weight)||'',b.section||'',b.number||'',b.status,b.sharedRun?'Yes':'No']);
+  }else if(type==='active'){
+    header = ['Start','End','Owner','Pet','Pet DOB','Pet Weight (lb)','Section','Run','Status','Shared'];
+    rows = bookings.filter(b=>b.type==='Boarding' && b.status==='active')
+           .map(b=>[b.checkIn,b.checkOut,(clients[b.clientIdx]?.owner)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.name)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.dob)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.weight)||'',b.section||'',b.number||'',b.status,b.sharedRun?'Yes':'No']);
+  }else if(type==='daycare'){
+    header = ['Date','Type','Owner','Pet','Pet DOB','Pet Weight (lb)','Yard','Notes'];
+    rows = bookings.filter(b=> (b.type==='Daycare'||b.type==='Grooming') && b.status==='active')
+           .map(b=>[b.checkIn,b.type,(clients[b.clientIdx]?.owner)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.name)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.dob)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.weight)||'',(b.type==='Daycare'?(b.yard||''):'').toString(),(clients[b.clientIdx]?.pets?.[b.petIdx]?.notes)||'']);
+  }else{
+    header = ['Type','Status','Start','End','Owner','Pet','Pet DOB','Pet Weight (lb)','Section','Run','Shared'];
+    rows = bookings.slice().map(b=>[b.type,b.status,b.checkIn,b.checkOut,(clients[b.clientIdx]?.owner)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.name)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.dob)||'',(clients[b.clientIdx]?.pets?.[b.petIdx]?.weight)||'',b.section||'',b.number||'',b.sharedRun?'Yes':'No']);
+  }
+  const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `county_acres_${type}_${Date.now()}.csv`; a.click();
+});
+
+/* ===========================
+   INIT
+=========================== */
+(async () => {
+  await loadState();
+  renderClientList();
+  if(!petsContainer.children.length) newPetRow();
+  populateClientSelect();
+  renderAll();
+
+  // Live sync: prefer SSE if server supports it; fallback to polling
+  if ('EventSource' in window) {
+    try {
+      const es = new EventSource(`${API_BASE}/api/state/stream?sig=${encodeURIComponent(lastServerSig)}`);
+      es.onmessage = (ev)=>{
+        try{
+          const data = JSON.parse(ev.data||'{}');
+          if (data && data.sig && data.sig !== lastServerSig) {
+            lastServerSig = data.sig;
+            clients = Array.isArray(data.clients) ? data.clients : clients;
+            bookings = Array.isArray(data.bookings) ? data.bookings : bookings;
+            populateClientSelect();
+            renderClientList();
+            renderAll();
+          }
+        }catch(_){/* ignore bad payloads */}
+      };
+      es.onerror = ()=>{ /* keep polling fallback below */ };
+    } catch(_) { /* ignore SSE failures and rely on polling */ }
+  }
+
+  // Polling fallback (every 4s)
+  setInterval(async ()=>{
+    try{
+      const r = await fetch(`${API_BASE}/api/state?sig=${encodeURIComponent(lastServerSig)}`);
+      if(!r.ok) return; // keep last state
+      const data = await r.json();
+      if (data && data.sig && data.sig !== lastServerSig) {
+        lastServerSig = data.sig;
+        clients = Array.isArray(data.clients) ? data.clients : clients;
+        bookings = Array.isArray(data.bookings) ? data.bookings : bookings;
+        // refresh UI to reflect remote updates
+        populateClientSelect();
+        renderClientList();
+        renderAll();
+      }
+    }catch(e){ /* ignore polling errors */ }
+  }, 4000);
+})();
+</script>
+</body>
+</html>

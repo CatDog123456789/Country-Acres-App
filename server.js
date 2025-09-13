@@ -13,8 +13,25 @@ const DATA_DIR = path.join(__dirname, "data");
 const STATE_FILE = path.join(DATA_DIR, "state.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
 
+// Log paths for debugging
+console.log("Current directory:", process.cwd());
+console.log("__dirname:", __dirname);
+console.log("DATA_DIR path:", DATA_DIR);
+console.log("PUBLIC_DIR path:", PUBLIC_DIR);
+
+// Ensure directories exist
 await fs.ensureDir(DATA_DIR);
+await fs.ensureDir(PUBLIC_DIR);
+
+// Check if public/index.html exists
+const indexPath = path.join(PUBLIC_DIR, "index.html");
+console.log("Checking if index.html exists at:", indexPath);
+const indexExists = await fs.pathExists(indexPath);
+console.log("index.html exists:", indexExists);
+
+// Initialize state file if it doesn't exist
 if (!(await fs.pathExists(STATE_FILE))) {
+  console.log("Creating new state.json file");
   await fs.writeJson(STATE_FILE, { clients: [], bookings: [], sig: String(Date.now()) }, { spaces: 2 });
 }
 
@@ -86,8 +103,54 @@ app.get('/api/state/stream', async (req, res) => {
   }catch(_){ /* ignore */ }
 });
 
-app.use(express.static(PUBLIC_DIR));
-app.get("*", (req, res) => res.sendFile(path.join(PUBLIC_DIR, "index.html")));
+// Serve static files with fallback
+console.log(`Serving static files from: ${PUBLIC_DIR}`);
+app.use(express.static(PUBLIC_DIR, { index: false }));
+
+// API health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    publicDir: PUBLIC_DIR,
+    dataDir: DATA_DIR
+  });
+});
+
+// Handle all other routes - with error handling for missing index.html
+app.get("*", async (req, res) => {
+  const indexFile = path.join(PUBLIC_DIR, "index.html");
+  console.log(`Attempting to serve index.html from: ${indexFile}`);
+
+  try {
+    const exists = await fs.pathExists(indexFile);
+    if (exists) {
+      return res.sendFile(indexFile);
+    }
+
+    console.warn(`index.html not found at ${indexFile}. Serving fallback page.`);
+    const files = await fs.readdir(PUBLIC_DIR).catch(() => []);
+
+    // Serve a friendly fallback page with 200 to keep SPA routing happy
+    res.status(200).send(`
+      <html>
+        <head><title>County Acres Pet Resort</title></head>
+        <body style="font-family: Arial, sans-serif; margin: 20px; line-height: 1.6;">
+          <h1 style="color: #2d9cdb;">County Acres Pet Resort</h1>
+          <p>The application is running, but <code>public/index.html</code> was not found.</p>
+          <p>A temporary fallback page is being served.</p>
+          <p><strong>PUBLIC_DIR:</strong> ${PUBLIC_DIR}</p>
+          <p><strong>Files:</strong> ${JSON.stringify(files)}</p>
+          <p><a href="/api/health">Check API Health</a> · <a href="/api/state">View API State</a></p>
+        </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error("Error checking for index.html:", err);
+    res.status(500).send(`Server error: ${err.message}`);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
