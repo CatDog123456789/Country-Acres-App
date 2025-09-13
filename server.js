@@ -105,7 +105,15 @@ app.get('/api/state/stream', async (req, res) => {
 
 // Serve static files with fallback
 console.log(`Serving static files from: ${PUBLIC_DIR}`);
-app.use(express.static(PUBLIC_DIR, { index: false }));
+app.use(express.static(PUBLIC_DIR, {
+  index: false,
+  maxAge: "7d",
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 // API health check endpoint
 app.get("/api/health", (req, res) => {
@@ -118,37 +126,16 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Handle all other routes - with error handling for missing index.html
+// Handle all other routes - serve index.html if present; otherwise 404
 app.get("*", async (req, res) => {
   const indexFile = path.join(PUBLIC_DIR, "index.html");
-  console.log(`Attempting to serve index.html from: ${indexFile}`);
-
   try {
     const exists = await fs.pathExists(indexFile);
-    if (exists) {
-      return res.sendFile(indexFile);
-    }
-
-    console.warn(`index.html not found at ${indexFile}. Serving fallback page.`);
-    const files = await fs.readdir(PUBLIC_DIR).catch(() => []);
-
-    // Serve a friendly fallback page with 200 to keep SPA routing happy
-    res.status(200).send(`
-      <html>
-        <head><title>County Acres Pet Resort</title></head>
-        <body style="font-family: Arial, sans-serif; margin: 20px; line-height: 1.6;">
-          <h1 style="color: #2d9cdb;">County Acres Pet Resort</h1>
-          <p>The application is running, but <code>public/index.html</code> was not found.</p>
-          <p>A temporary fallback page is being served.</p>
-          <p><strong>PUBLIC_DIR:</strong> ${PUBLIC_DIR}</p>
-          <p><strong>Files:</strong> ${JSON.stringify(files)}</p>
-          <p><a href="/api/health">Check API Health</a> · <a href="/api/state">View API State</a></p>
-        </body>
-      </html>
-    `);
+    if (exists) return res.sendFile(indexFile);
+    return res.status(404).send("Not Found");
   } catch (err) {
     console.error("Error checking for index.html:", err);
-    res.status(500).send(`Server error: ${err.message}`);
+    return res.status(500).send(`Server error: ${err.message}`);
   }
 });
 
